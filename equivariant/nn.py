@@ -59,13 +59,15 @@ class LinearEquivariant1to1(Module):
 
     :param in_features: Input features
     :param out_features: Output features
+    :param normalize: Whether to normalize basis
     """
 
-    def __init__(self, in_features: int, out_features: int, device=None, dtype=None):
+    def __init__(self, in_features: int, out_features: int, normalize: bool = False, device=None, dtype=None):
         super(LinearEquivariant1to1, self).__init__()
         factory_kwargs = {'device': device, 'dtype': dtype}
         self.weight = Parameter(torch.empty((out_features, in_features * self.basis_elements, 1), **factory_kwargs))
         self.bias = Parameter(torch.empty(out_features, **factory_kwargs))
+        self.normalize = normalize
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -74,7 +76,7 @@ class LinearEquivariant1to1(Module):
         init.uniform_(self.bias, -bound, bound)
 
     def forward(self, x: Tensor) -> Tensor:
-        x = torch.cat(equivariant_1_to_1(x), dim=1)
+        x = torch.cat(equivariant_1_to_1(x, self.normalize), dim=1)
         return F.conv1d(x, self.weight, self.bias)
 
     @property
@@ -100,13 +102,15 @@ class LinearEquivariant1to2(Module):
 
     :param in_features: Input features
     :param out_features: Output features
+    :param normalize: Whether to normalize basis
     """
 
-    def __init__(self, in_features: int, out_features: int, device=None, dtype=None):
+    def __init__(self, in_features: int, out_features: int, normalize: bool = False, device=None, dtype=None):
         super(LinearEquivariant1to2, self).__init__()
         factory_kwargs = {'device': device, 'dtype': dtype}
         self.weight = Parameter(torch.empty((out_features, in_features * self.basis_elements, 1, 1), **factory_kwargs))
         self.bias = Parameter(torch.empty(out_features, **factory_kwargs))
+        self.normalize = normalize
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -115,7 +119,7 @@ class LinearEquivariant1to2(Module):
         init.uniform_(self.bias, -bound, bound)
 
     def forward(self, x: Tensor) -> Tensor:
-        x = torch.cat(equivariant_1_to_2(x), dim=1)
+        x = torch.cat(equivariant_1_to_2(x, self.normalize), dim=1)
         return F.conv2d(x, self.weight, self.bias)
 
     @property
@@ -141,13 +145,15 @@ class LinearEquivariant2to1(Module):
 
     :param in_features: Input features
     :param out_features: Output features
+    :param normalize: Whether to normalize basis
     """
 
-    def __init__(self, in_features: int, out_features: int, device=None, dtype=None):
+    def __init__(self, in_features: int, out_features: int, normalize: bool = False, device=None, dtype=None):
         super(LinearEquivariant2to1, self).__init__()
         factory_kwargs = {'device': device, 'dtype': dtype}
         self.weight = Parameter(torch.empty((out_features, in_features * self.basis_elements, 1), **factory_kwargs))
         self.bias = Parameter(torch.empty(out_features, **factory_kwargs))
+        self.normalize = normalize
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -156,7 +162,7 @@ class LinearEquivariant2to1(Module):
         init.uniform_(self.bias, -bound, bound)
 
     def forward(self, x: Tensor) -> Tensor:
-        x = torch.cat(equivariant_2_to_1(x), dim=1)
+        x = torch.cat(equivariant_2_to_1(x, self.normalize), dim=1)
         return F.conv1d(x, self.weight, self.bias)
 
     @property
@@ -182,14 +188,16 @@ class LinearEquivariant2to2(Module):
 
     :param in_features: Input features
     :param out_features: Output features
+    :param normalize: Whether to normalize basis
     """
 
-    def __init__(self, in_features: int, out_features: int, device=None, dtype=None):
+    def __init__(self, in_features: int, out_features: int, normalize: bool = False, device=None, dtype=None):
         super(LinearEquivariant2to2, self).__init__()
         factory_kwargs = {'device': device, 'dtype': dtype}
         self.weight = Parameter(torch.empty((out_features, in_features * self.basis_elements, 1, 1), **factory_kwargs))
         self.bias_all = Parameter(torch.empty(out_features, **factory_kwargs))
         self.bias_diag = Parameter(torch.empty((out_features, 1), **factory_kwargs))
+        self.normalize = normalize
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -199,7 +207,7 @@ class LinearEquivariant2to2(Module):
         init.uniform_(self.bias_diag, -bound, bound)
 
     def forward(self, x: Tensor) -> Tensor:
-        x = torch.cat(equivariant_2_to_2(x), dim=1)
+        x = torch.cat(equivariant_2_to_2(x, self.normalize), dim=1)
         diag_bias = self.bias_diag.expand(-1, x.shape[-1]).diag_embed()
         return F.conv2d(x, self.weight, self.bias_all) + diag_bias
 
@@ -226,14 +234,16 @@ class LinearEquivariant2to2Symmetric(Module):
 
     :param in_features: Input features
     :param out_features: Output features
+    :param normalize: Whether to normalize basis
     """
 
-    def __init__(self, in_features: int, out_features: int, device=None, dtype=None):
+    def __init__(self, in_features: int, out_features: int, normalize: bool = False, device=None, dtype=None):
         super(LinearEquivariant2to2Symmetric, self).__init__()
         factory_kwargs = {'device': device, 'dtype': dtype}
         self.weight = Parameter(torch.empty((out_features, in_features * self.basis_elements, 1, 1), **factory_kwargs))
         self.bias_all = Parameter(torch.empty(out_features, **factory_kwargs))
         self.bias_diag = Parameter(torch.empty((out_features, 1), **factory_kwargs))
+        self.normalize = normalize
         self.reset_parameters()
 
     def reset_parameters(self):
@@ -243,7 +253,7 @@ class LinearEquivariant2to2Symmetric(Module):
         init.uniform_(self.bias_diag, -bound, bound)
 
     def forward(self, x: Tensor) -> Tensor:
-        x = torch.cat(equivariant_2_to_2_symmetric(x), dim=1)
+        x = torch.cat(equivariant_2_to_2_symmetric(x, self.normalize), dim=1)
         diag_bias = self.bias_diag.expand(-1, x.shape[-1]).diag_embed()
         return F.conv2d(x, self.weight, self.bias_all) + diag_bias
 
